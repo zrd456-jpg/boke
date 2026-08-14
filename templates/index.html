@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site_title }}</title>
+    <style>
+        /* ===== 全局 ===== */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background-color: #0b0e0f;
+            color: #00ffc8;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        /* 背景画布容器 */
+        .bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        #effect-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .container {
+            position: relative;
+            z-index: 3;
+            padding: 20px 15px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        /* AOS 滑动 */
+        .aos-item {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .aos-item.visible { opacity:1; transform:translateY(0); }
+        .aos-delay-1 { transition-delay:0.1s; }
+        .aos-delay-2 { transition-delay:0.2s; }
+        .aos-delay-3 { transition-delay:0.3s; }
+        .aos-delay-4 { transition-delay:0.4s; }
+        .aos-delay-5 { transition-delay:0.5s; }
+
+        h1,h2,h3,h4 {
+            font-weight:bold;
+            text-shadow:0 0 10px #00ffc8,0 0 20px #00ffc8,0 0 40px #00aa88;
+            letter-spacing:2px;
+        }
+        .card {
+            background:rgba(10,20,20,0.75);
+            backdrop-filter:blur(6px);
+            border:1px solid #00ffc8;
+            box-shadow:0 0 20px rgba(0,255,200,0.2);
+            border-radius:15px;
+            color:#b0f0e0;
+            transition:all 0.3s ease;
+            padding:15px;
+            margin-bottom:20px;
+        }
+        .card:hover {
+            box-shadow:0 0 40px rgba(0,255,200,0.5);
+            transform:scale(1.02);
+        }
+        .card-title { color:#00ffc8; text-shadow:0 0 8px #00ffc8; }
+        .btn {
+            font-family:'Courier New',monospace;
+            border-radius:30px;
+            font-weight:bold;
+            letter-spacing:1px;
+            transition:all 0.2s;
+            border:1px solid #00ffc8;
+            background:transparent;
+            color:#00ffc8;
+            box-shadow:0 0 15px rgba(0,255,200,0.2);
+            display:inline-block;
+            padding:8px 20px;
+            margin:4px 2px;
+            cursor:pointer;
+            text-decoration:none;
+            font-size:0.9rem;
+        }
+        .btn:hover {
+            background:#00ffc8;
+            color:#0b0e0f;
+            box-shadow:0 0 30px #00ffc8;
+            transform:scale(1.05);
+        }
+        .btn-primary { border-color:#00aaff; color:#00aaff; }
+        .btn-primary:hover { background:#00aaff; color:#0b0e0f; }
+        .btn-success { border-color:#00ff88; color:#00ff88; }
+        .btn-success:hover { background:#00ff88; color:#0b0e0f; }
+        .btn-secondary { border-color:#66ccff; color:#66ccff; }
+        .btn-secondary:hover { background:#66ccff; color:#0b0e0f; }
+        .btn-danger { border-color:#ff4466; color:#ff4466; }
+        .btn-danger:hover { background:#ff4466; color:#0b0e0f; }
+        .btn-warning { border-color:#ffaa00; color:#ffaa00; }
+        .btn-warning:hover { background:#ffaa00; color:#0b0e0f; }
+        .btn-info { border-color:#00ddff; color:#00ddff; }
+        .btn-info:hover { background:#00ddff; color:#0b0e0f; }
+        .btn-website { border-color:#ff66cc; color:#ff66cc; }
+        .btn-website:hover { background:#ff66cc; color:#0b0e0f; }
+        .navbar {
+            background:rgba(0,20,20,0.7);
+            backdrop-filter:blur(8px);
+            border-bottom:1px solid #00ffc8;
+            border-radius:0 0 20px 20px;
+            padding:12px 20px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            flex-wrap:wrap;
+            margin-bottom:20px;
+        }
+        .navbar a {
+            color:#00ffc8 !important;
+            text-shadow:0 0 8px #00ffc8;
+            font-weight:bold;
+            text-decoration:none;
+            margin:0 10px;
+        }
+        .navbar a:hover { color:#ffffff !important; text-shadow:0 0 20px #00ffc8; }
+        .navbar .nav-right { display:flex; gap:10px; flex-wrap:wrap; }
+        .table { width:100%; border-collapse:collapse; color:#b0f0e0; margin:15px 0; }
+        .table th,.table td { padding:10px; border:1px solid rgba(0,255,200,0.2); text-align:left; }
+        .table th { color:#00ffc8; border-bottom:2px solid #00ffc8; }
+        .table-striped tbody tr:nth-of-type(odd) { background-color:rgba(0,255,200,0.05); }
+        .form-control,.form-select {
+            background:rgba(0,30,30,0.8);
+            border:1px solid #00ffc8;
+            color:#00ffc8;
+            font-family:'Courier New',monospace;
+            padding:8px 12px;
+            border-radius:8px;
+            width:100%;
+            margin-bottom:10px;
+        }
+        .form-control:focus,.form-select:focus {
+            background:rgba(0,30,30,0.9);
+            border-color:#00ffc8;
+            box-shadow:0 0 25px rgba(0,255,200,0.3);
+            color:#ffffff;
+            outline:none;
+        }
+        .form-label { color:#00ffc8; text-shadow:0 0 5px #00ffc8; display:block; margin-bottom:4px; }
+        .form-check { display:flex; align-items:center; gap:8px; margin:10px 0; }
+        .form-check-input { width:18px; height:18px; background-color:#0b0e0f; border:1px solid #00ffc8; border-radius:4px; cursor:pointer; }
+        .form-check-input:checked { background-color:#00ffc8; border-color:#00ffc8; }
+        .form-check-label { color:#b0f0e0; }
+        .badge {
+            background:rgba(0,255,200,0.2);
+            color:#00ffc8;
+            border:1px solid #00ffc8;
+            padding:4px 12px;
+            border-radius:30px;
+            display:inline-block;
+            font-size:0.8rem;
+        }
+        .cursor-blink {
+            display:inline-block;
+            width:10px;
+            height:20px;
+            background:#00ffc8;
+            box-shadow:0 0 15px #00ffc8;
+            animation:blink 1s step-end infinite;
+        }
+        @keyframes blink { 0%,100%{ opacity:1; } 50%{ opacity:0; } }
+        a { color:#66ddff; text-decoration:none; }
+        a:hover { color:#ffffff; text-shadow:0 0 20px #00ffc8; }
+        ::-webkit-scrollbar { width:8px; background:#0b0e0f; }
+        ::-webkit-scrollbar-thumb { background:#00ffc8; border-radius:10px; box-shadow:0 0 20px #00ffc8; }
+        .login-box { max-width:400px; margin:10% auto; }
+        .text-center { text-align:center; }
+        .mt-4 { margin-top:20px; }
+        .mb-4 { margin-bottom:20px; }
+        .mb-3 { margin-bottom:15px; }
+        .me-2 { margin-right:8px; }
+        .row { display:flex; flex-wrap:wrap; gap:20px; }
+        .col-md-4 { flex:1 1 30%; min-width:250px; }
+        .col-md-6 { flex:1 1 45%; min-width:200px; }
+        .w-100 { width:100%; }
+        .d-flex { display:flex; }
+        .align-items-center { align-items:center; }
+        .ms-auto { margin-left:auto; }
+        .gap-2 { gap:8px; }
+        .hr { border:0; height:1px; background:#00ffc8; box-shadow:0 0 20px #00ffc8; margin:20px 0; }
+        .text-muted { color:#88bbaa; }
+        .mt-5 { margin-top:40px; }
+        .pt-3 { padding-top:15px; }
+        footer { border-top:1px solid #00ffc8; }
+        .bg-transparent { background:transparent; }
+        .border-bottom { border-bottom:1px solid #00ffc8; }
+        .border-success { border-color:#00ffc8; }
+        .table-responsive { overflow-x:auto; }
+        .alert {
+            padding:12px 20px;
+            border-radius:8px;
+            border:1px solid #00ffc8;
+            background:rgba(0,255,200,0.1);
+            color:#00ffc8;
+            margin-bottom:15px;
+        }
+        .alert-danger {
+            border-color:#ff4466;
+            background:rgba(255,0,0,0.1);
+            color:#ff4466;
+        }
+        /* 不同模板样式示例 */
+        .template-showcase .card {
+            background:rgba(20,10,30,0.8);
+            border-color:#ff66cc;
+            box-shadow:0 0 30px rgba(255,102,204,0.3);
+        }
+        .template-download .btn-success {
+            font-size:1.2rem;
+            padding:12px 40px;
+        }
+        .template-docs .card {
+            border-color:#66ccff;
+            background:rgba(0,30,40,0.8);
+        }
+        .template-minimal .card {
+            border-color:#888;
+            background:rgba(0,0,0,0.5);
+            box-shadow:none;
+        }
+
+        /* ===== 新增：侧边栏 & 主布局 ===== */
+        .main-layout {
+            display: flex;
+            gap: 25px;
+            margin-top: 10px;
+        }
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            background: rgba(173, 216, 230, 0.20);    /* 浅蓝色透明 */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 22px 18px;
+            border: 1px solid rgba(173, 216, 230, 0.35);
+            box-shadow: 0 0 40px rgba(173, 216, 230, 0.12);
+            color: #c8eaff;
+            position: sticky;
+            top: 20px;
+            align-self: flex-start;
+            transition: all 0.3s;
+        }
+        .sidebar:hover {
+            box-shadow: 0 0 60px rgba(173, 216, 230, 0.25);
+        }
+        .sidebar h3 {
+            color: #b0e0ff;
+            text-shadow: 0 0 12px #b0e0ff;
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        .sidebar .bio {
+            font-size: 0.85rem;
+            color: #c8eaff;
+            margin: 12px 0 18px 0;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+        .sidebar hr {
+            border: 0;
+            height: 1px;
+            background: rgba(173, 216, 230, 0.25);
+            margin: 12px 0 16px 0;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar ul li {
+            margin: 8px 0;
+        }
+        .sidebar ul li a {
+            color: #c8eaff;
+            text-decoration: none;
+            display: block;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+        .sidebar ul li a:hover {
+            background: rgba(173, 216, 230, 0.20);
+            color: #ffffff;
+            border-left-color: #b0e0ff;
+            text-shadow: 0 0 12px #b0e0ff;
+        }
+        .sidebar ul li a.active {
+            background: rgba(173, 216, 230, 0.15);
+            border-left-color: #b0e0ff;
+        }
+        .sidebar .admin-tag {
+            font-size: 0.7rem;
+            background: rgba(173, 216, 230, 0.2);
+            padding: 2px 10px;
+            border-radius: 30px;
+            color: #b0e0ff;
+            border: 1px solid rgba(173, 216, 230, 0.2);
+            display: inline-block;
+            margin-top: 6px;
+        }
+        .content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* 移动端：隐藏侧边栏，内容占满 */
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .sidebar {
+                width: 100%;
+                position: relative;
+                top: 0;
+                margin-bottom: 10px;
+                display: none;  /* 默认隐藏，可改为显示但会占用空间，这里隐藏，顶部导航已提供所有链接 */
+            }
+            /* 如果希望移动端也显示侧边栏，可以改为 display:block，并调整样式 */
+        }
+
+        /* 小屏时顶部导航显示所有链接（原有导航已包含），侧边栏隐藏，保持简洁 */
+        /* 顶部导航在移动端依然可见，所以无需额外操作 */
+    </style>
+</head>
+<body>
+    <div class="bg-canvas">
+        <canvas id="effect-canvas"></canvas>
+    </div>
+    <div class="container">
+        <!-- ========== 登录页独立显示 ========== -->
+        {% if page == 'admin_login' %}
+        <div class="login-box">
+            <div class="card">
+                <h3 class="text-center">管理员登录</h3>
+                {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">密码</label>
+                        <input type="password" class="form-control" name="password" placeholder="请输入密码" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">登录</button>
+                </form>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- ========== 导航栏（简化版：仅标题 + 登录状态） ========== -->
+        <div class="navbar">
+            <div><a href="{{ url_for('home') }}"><strong>{{ site_title }}</strong></a></div>
+            <div class="nav-right">
+                {% if session.admin_logged_in %}
+                <a href="{{ url_for('admin_logout') }}">退出</a>
+                {% else %}
+                <a href="{{ url_for('admin_login') }}">登录</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ========== 主布局：侧边栏 + 内容 ========== -->
+        <div class="main-layout">
+            <!-- 侧边栏 -->
+            <aside class="sidebar">
+                <h3>{{ site_title }}</h3>
+                <div class="bio">{{ bio|truncate(80) }}</div>
+                <hr>
+                <ul>
+                    <li><a href="{{ url_for('home') }}">🏠 首页</a></li>
+                    <li><a href="{{ url_for('sites') }}">🌐 个人网站</a></li>
+                    <li><a href="{{ url_for('guestbook') }}">💬 留言板</a></li>
+                    {% if video_url and video_url != '#' %}
+                    <li><a href="{{ video_url }}" target="_blank">📹 视频</a></li>
+                    {% endif %}
+                    {% if github_url and github_url != '#' %}
+                    <li><a href="{{ github_url }}" target="_blank">🐙 GitHub</a></li>
+                    {% endif %}
+                    {% for link in extra_links %}
+                    <li><a href="{{ link.url }}" target="_blank">{{ link.name }}</a></li>
+                    {% endfor %}
+                    {% if session.admin_logged_in %}
+                    <li><a href="{{ url_for('admin_dashboard') }}">⚙️ 管理</a></li>
+                    <li><a href="{{ url_for('admin_domains') }}">🌐 域名</a></li>
+                    <li><a href="{{ url_for('admin_settings') }}">🔧 设置</a></li>
+                    <li><a href="{{ url_for('admin_logout') }}">🚪 退出</a></li>
+                    {% else %}
+                    <li><a href="{{ url_for('admin_login') }}">🔑 登录</a></li>
+                    {% endif %}
+                </ul>
+                <div style="margin-top:20px; font-size:0.75rem; color:rgba(173,216,230,0.5);">
+                    <span class="admin-tag">v2.0</span>
+                </div>
+            </aside>
+
+            <!-- 主内容 -->
+            <main class="content">
+                <!-- ====== 各页面块（原内容） ====== -->
+                {% if page == 'home' %}
+                <!-- 首页内容 -->
+                <div class="text-center mb-4 aos-item">
+                    <h1>欢迎来到我的数字领域</h1>
+                    <p style="color:#88ddcc; text-shadow:0 0 10px #00ffc8; font-size:1.2rem;">
+                        <span class="cursor-blink"></span> 系统就绪 · 2026
+                    </p>
+                </div>
+                <hr class="hr aos-item">
+                <h2 class="aos-item">个人简介</h2>
+                <div class="card aos-item aos-delay-1"><p style="font-size:1.1rem;">{{ bio }}</p></div>
+                <hr class="hr aos-item">
+                <h2 class="aos-item">开源项目</h2>
+                <div class="row">
+                    {% for project in opensource_projects %}
+                    <div class="col-md-4 aos-item aos-delay-{{ loop.index % 5 + 1 }}">
+                        <div class="card">
+                            <h5 class="card-title">{{ project.title }}</h5>
+                            <p>{{ project.description|truncate(60) }}</p>
+                            {% if project.website_url %}
+                            <a href="{{ project.website_url }}" class="btn btn-website" target="_blank">访问网站</a>
+                            {% endif %}
+                            <a href="{{ project.repo_url }}" class="btn btn-primary" target="_blank">代码</a>
+                            {% if project.full_subdomain() %}
+                            <a href="https://{{ project.full_subdomain() }}" class="btn btn-secondary">子域</a>
+                            {% endif %}
+                            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-info">详情</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">暂无开源项目</p>
+                    {% endfor %}
+                </div>
+                <hr class="hr aos-item">
+                <h2 class="aos-item">软件下载</h2>
+                <div class="row">
+                    {% for project in software_projects %}
+                    <div class="col-md-4 aos-item aos-delay-{{ loop.index % 5 + 1 }}">
+                        <div class="card">
+                            <h5 class="card-title">{{ project.title }}</h5>
+                            <p>{{ project.description|truncate(60) }}</p>
+                            {% if project.website_url %}
+                            <a href="{{ project.website_url }}" class="btn btn-website" target="_blank">访问网站</a>
+                            {% endif %}
+                            <a href="{{ project.download_url }}" class="btn btn-success" target="_blank">下载</a>
+                            {% if project.full_subdomain() %}
+                            <a href="https://{{ project.full_subdomain() }}" class="btn btn-secondary">子域</a>
+                            {% endif %}
+                            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-info">详情</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">暂无软件</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if page == 'detail' %}
+                <!-- 项目详情 -->
+                <div class="template-{{ project.template_type }}">
+                    <div class="card aos-item">
+                        <div style="border-bottom:1px solid #00ffc8; padding-bottom:10px; margin-bottom:15px;">
+                            <h2>{{ project.title }}</h2>
+                            <span class="badge">{{ '开源' if project.project_type=='opensource' else '软件' }}</span>
+                            <span class="badge" style="background:rgba(0,0,255,0.2); border-color:#0066ff;">模板: {{ project.template_type }}</span>
+                            {% if project.full_subdomain() %}
+                            <a href="https://{{ project.full_subdomain() }}" class="btn btn-secondary btn-sm">专属子域</a>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p style="font-size:1.2rem;">{{ project.description }}</p>
+                            {% if project.website_url %}
+                            <a href="{{ project.website_url }}" class="btn btn-website" target="_blank">访问网站</a>
+                            {% endif %}
+                            <!-- 模板额外内容 -->
+                            {% if project.template_type == 'showcase' %}
+                            <div style="border:1px dashed #ff66cc; padding:15px; border-radius:10px; margin:15px 0;">
+                                <h4 style="color:#ff66cc;">✨ 项目亮点</h4>
+                                <p>此项目采用展示型模板，适合突出视觉效果。</p>
+                            </div>
+                            {% elif project.template_type == 'download' %}
+                            <div style="text-align:center; margin:20px 0;">
+                                {% if project.download_url %}
+                                <a href="{{ project.download_url }}" class="btn btn-success" style="font-size:1.5rem; padding:12px 50px;" target="_blank">⬇ 立即下载</a>
+                                {% endif %}
+                            </div>
+                            {% elif project.template_type == 'docs' %}
+                            <div style="background:rgba(0,30,40,0.5); padding:20px; border-radius:10px; margin:15px 0; border-left:4px solid #66ccff;">
+                                <h4 style="color:#66ccff;">📖 文档说明</h4>
+                                <p>{{ project.description }}</p>
+                            </div>
+                            {% elif project.template_type == 'minimal' %}
+                            <div style="text-align:center; padding:10px;">
+                                <p style="color:#aaa;">简约风格展示</p>
+                            </div>
+                            {% endif %}
+                            {% if project.project_type == 'opensource' and project.repo_url %}
+                            <a href="{{ project.repo_url }}" class="btn btn-primary" target="_blank">访问仓库</a>
+                            {% endif %}
+                            {% if project.project_type == 'software' and project.download_url %}
+                            <a href="{{ project.download_url }}" class="btn btn-success" target="_blank">下载</a>
+                            {% endif %}
+                            <a href="{{ url_for('home') }}" class="btn btn-secondary">返回</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if page == 'sites' %}
+                <!-- 个人网站 -->
+                <h1 class="text-center aos-item">🌐 我的所有网站</h1>
+                <hr class="hr aos-item">
+                <h2 class="aos-item">📦 内部项目</h2>
+                <div class="row">
+                    {% for project in all_projects %}
+                    <div class="col-md-4 aos-item aos-delay-{{ loop.index % 5 + 1 }}">
+                        <div class="card">
+                            <h5 class="card-title">{{ project.title }}</h5>
+                            <p>{{ project.description|truncate(60) }}</p>
+                            <span class="badge">{{ '开源' if project.project_type=='opensource' else '软件' }}</span>
+                            {% if project.website_url %}
+                            <a href="{{ project.website_url }}" class="btn btn-website" target="_blank">访问网站</a>
+                            {% endif %}
+                            {% if project.full_subdomain() %}
+                            <a href="https://{{ project.full_subdomain() }}" class="btn btn-secondary">子域</a>
+                            {% endif %}
+                            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-info">详情</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">暂无内部项目</p>
+                    {% endfor %}
+                </div>
+                {% if sites_list %}
+                <h2 class="aos-item">🔗 外部网站</h2>
+                <div class="row">
+                    {% for site in sites_list %}
+                    <div class="col-md-4 aos-item aos-delay-{{ loop.index % 5 + 1 }}">
+                        <div class="card">
+                            <h5 class="card-title">{{ site.name }}</h5>
+                            <p>外部链接</p>
+                            <a href="{{ site.url }}" class="btn btn-website" target="_blank">访问网站</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">返回首页</a>
+                {% endif %}
+
+                {% if page == 'guestbook' %}
+                <!-- 留言板 -->
+                <h1 class="text-center aos-item">💬 留言板</h1>
+                <hr class="hr aos-item">
+                <div class="card aos-item">
+                    <h4>📧 联系管理员</h4>
+                    <p>管理员邮箱：<strong>{{ admin_email }}</strong></p>
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label">您的姓名</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">您的邮箱</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">留言内容</label>
+                            <textarea class="form-control" name="content" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">提交留言</button>
+                    </form>
+                </div>
+                <hr class="hr aos-item">
+                <h2 class="aos-item">📜 历史留言</h2>
+                {% for msg in messages %}
+                <div class="card aos-item aos-delay-{{ loop.index % 5 + 1 }}">
+                    <p><strong>{{ msg.name }}</strong> <span style="color:#88ddcc;">({{ msg.email }})</span></p>
+                    <p>{{ msg.content }}</p>
+                    <small class="text-muted">{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+                {% else %}
+                <p class="text-muted">暂无留言</p>
+                {% endfor %}
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">返回首页</a>
+                {% endif %}
+
+                {% if page == 'admin' %}
+                <!-- 管理控制台 -->
+                <h1 class="text-center aos-item">管理控制台</h1>
+                <hr class="hr aos-item">
+                <div class="card aos-item">
+                    <h4>{{ '✎ 编辑项目' if edit_project else '✚ 新项目' }}</h4>
+                    <form method="post">
+                        <input type="hidden" name="action" value="{{ 'edit' if edit_project else 'add' }}">
+                        {% if edit_project %}<input type="hidden" name="id" value="{{ edit_project.id }}">{% endif %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">项目名称</label>
+                                <input type="text" class="form-control" name="title" value="{{ edit_project.title if edit_project else '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">类型</label>
+                                <select class="form-select" name="project_type" required>
+                                    <option value="opensource" {% if edit_project and edit_project.project_type=='opensource' %}selected{% endif %}>开源项目</option>
+                                    <option value="software" {% if edit_project and edit_project.project_type=='software' %}selected{% endif %}>软件下载</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">描述</label>
+                            <textarea class="form-control" name="description" rows="3" required>{{ edit_project.description if edit_project else '' }}</textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">仓库链接（开源）</label>
+                                <input type="url" class="form-control" name="repo_url" value="{{ edit_project.repo_url if edit_project else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">下载链接（软件）</label>
+                                <input type="url" class="form-control" name="download_url" value="{{ edit_project.download_url if edit_project else '' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">网站链接（自定义）</label>
+                            <input type="text" class="form-control" name="website_url" value="{{ edit_project.website_url if edit_project else '' }}" placeholder="https://... 或 file:///...">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">三级域名前缀</label>
+                                <input type="text" class="form-control" name="subdomain_prefix" value="{{ edit_project.subdomain_prefix if edit_project else '' }}" placeholder="例: myapp">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">模板类型</label>
+                                <select class="form-select" name="template_type">
+                                    <option value="default" {% if edit_project and edit_project.template_type=='default' %}selected{% endif %}>默认</option>
+                                    <option value="showcase" {% if edit_project and edit_project.template_type=='showcase' %}selected{% endif %}>展示型</option>
+                                    <option value="download" {% if edit_project and edit_project.template_type=='download' %}selected{% endif %}>下载型</option>
+                                    <option value="docs" {% if edit_project and edit_project.template_type=='docs' %}selected{% endif %}>文档型</option>
+                                    <option value="minimal" {% if edit_project and edit_project.template_type=='minimal' %}selected{% endif %}>极简型</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" {% if not edit_project or edit_project.is_active %}checked{% endif %}>
+                                    <label class="form-check-label">启用</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">{{ '更新' if edit_project else '添加' }}</button>
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">取消</a>
+                    </form>
+                </div>
+                <h3 class="aos-item">现有项目</h3>
+                <div class="table-responsive aos-item">
+                    <table class="table table-striped">
+                        <thead><tr><th>#</th><th>标题</th><th>类型</th><th>子域</th><th>模板</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody>
+                            {% for p in projects %}
+                            <tr>
+                                <td>{{ p.id }}</td>
+                                <td>{{ p.title }}</td>
+                                <td>{{ '开源' if p.project_type=='opensource' else '软件' }}</td>
+                                <td>{{ p.full_subdomain() if p.full_subdomain() else '-' }}</td>
+                                <td>{{ p.template_type }}</td>
+                                <td><span class="badge" style="background:{{ 'rgba(0,255,0,0.2)' if p.is_active else 'rgba(255,0,0,0.2)' }}; border-color:{{ '#00ff88' if p.is_active else '#ff4466' }};">{{ '启用' if p.is_active else '禁用' }}</span></td>
+                                <td>
+                                    <a href="{{ url_for('admin_dashboard', edit=p.id) }}" class="btn btn-warning btn-sm">编辑</a>
+                                    <form method="post" style="display:inline;" onsubmit="return confirm('确认删除？')">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="{{ p.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">删除</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="text-center text-muted">暂无项目</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">返回首页</a>
+                {% endif %}
+
+                {% if page == 'admin_messages' %}
+                <!-- 留言管理 -->
+                <h1 class="text-center aos-item">📬 留言管理</h1>
+                <hr class="hr aos-item">
+                <div class="table-responsive aos-item">
+                    <table class="table table-striped">
+                        <thead><tr><th>ID</th><th>姓名</th><th>邮箱</th><th>内容</th><th>时间</th><th>操作</th></tr></thead>
+                        <tbody>
+                            {% for msg in messages %}
+                            <tr>
+                                <td>{{ msg.id }}</td>
+                                <td>{{ msg.name }}</td>
+                                <td>{{ msg.email }}</td>
+                                <td>{{ msg.content|truncate(50) }}</td>
+                                <td>{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin_message_delete', msg_id=msg.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('确认删除此留言？')">删除</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center text-muted">暂无留言</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">返回管理</a>
+                {% endif %}
+
+                {% if page == 'settings' %}
+                <!-- 设置 -->
+                <h1 class="text-center aos-item">网站设置</h1>
+                <hr class="hr aos-item">
+                <div class="card aos-item">
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label">网站标题</label>
+                            <input type="text" class="form-control" name="site_title" value="{{ settings.site_title }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">个人简介（支持 HTML）</label>
+                            <textarea class="form-control" name="bio" rows="4">{{ settings.bio }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">视频平台链接</label>
+                            <input type="url" class="form-control" name="video_url" value="{{ settings.video_url }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">GitHub 链接</label>
+                            <input type="url" class="form-control" name="github_url" value="{{ settings.github_url }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">页脚文字</label>
+                            <input type="text" class="form-control" name="footer_text" value="{{ settings.footer_text }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">管理员邮箱</label>
+                            <input type="email" class="form-control" name="admin_email" value="{{ settings.admin_email }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">背景特效</label>
+                            <select class="form-select" name="bg_effect">
+                                <option value="matrix" {% if settings.bg_effect=='matrix' %}selected{% endif %}>代码雨</option>
+                                <option value="particles" {% if settings.bg_effect=='particles' %}selected{% endif %}>粒子星空</option>
+                                <option value="fire" {% if settings.bg_effect=='fire' %}selected{% endif %}>火焰粒子</option>
+                                <option value="wave" {% if settings.bg_effect=='wave' %}selected{% endif %}>波浪线条</option>
+                                <option value="neon" {% if settings.bg_effect=='neon' %}selected{% endif %}>霓虹光晕</option>
+                                <option value="digital" {% if settings.bg_effect=='digital' %}selected{% endif %}>数字网格</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">导航栏额外链接 (JSON)</label>
+                            <textarea class="form-control" name="extra_links" rows="3">{{ settings.extra_links }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">个人网站外部列表 (JSON)</label>
+                            <textarea class="form-control" name="sites_list" rows="3">{{ settings.sites_list }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">保存设置</button>
+                        <a href="{{ url_for('home') }}" class="btn btn-secondary">返回首页</a>
+                    </form>
+                </div>
+                {% endif %}
+
+                {% if page == 'domains' %}
+                <!-- 域名管理 -->
+                <h1 class="text-center aos-item">域名管理</h1>
+                {% if message %}
+                <div class="alert aos-item">{{ message }}</div>
+                {% endif %}
+                <hr class="hr aos-item">
+                <div class="card aos-item">
+                    <form method="post" style="display:inline;">
+                        <input type="hidden" name="action" value="batch_sync">
+                        <button type="submit" class="btn btn-success" onclick="return confirm('确认重新同步所有项目的 DNS 记录吗？')">批量重新同步 DNS</button>
+                    </form>
+                </div>
+                <div class="table-responsive aos-item">
+                    <table class="table table-striped">
+                        <thead><tr><th>ID</th><th>标题</th><th>前缀</th><th>完整域名</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody>
+                            {% for p in projects %}
+                            <tr>
+                                <td>{{ p.id }}</td>
+                                <td>{{ p.title }}</td>
+                                <td>{{ p.subdomain_prefix if p.subdomain_prefix else '-' }}</td>
+                                <td>{% if p.full_subdomain() %}<a href="https://{{ p.full_subdomain() }}" target="_blank">{{ p.full_subdomain() }}</a>{% else %}-{% endif %}</td>
+                                <td>
+                                    <span class="badge" style="background:{{ 'rgba(0,255,0,0.2)' if p.is_active else 'rgba(255,0,0,0.2)' }}; border-color:{{ '#00ff88' if p.is_active else '#ff4466' }};">{{ '启用' if p.is_active else '禁用' }}</span>
+                                    {% if p.subdomain_prefix %}<span class="badge" style="background:rgba(0,0,255,0.2); border-color:#0066ff;">有域名</span>{% else %}<span class="badge" style="background:rgba(128,128,128,0.2); border-color:#888;">无域名</span>{% endif %}
+                                </td>
+                                <td>
+                                    <div style="display:flex; flex-wrap:wrap; gap:5px;">
+                                        {% if p.subdomain_prefix and p.is_active %}
+                                        <form method="post" style="display:inline;">
+                                            <input type="hidden" name="action" value="add_dns">
+                                            <input type="hidden" name="project_id" value="{{ p.id }}">
+                                            <button type="submit" class="btn btn-primary btn-sm">添加 DNS</button>
+                                        </form>
+                                        {% endif %}
+                                        {% if p.subdomain_prefix %}
+                                        <form method="post" style="display:inline;" onsubmit="return confirm('确认删除 DNS？')">
+                                            <input type="hidden" name="action" value="delete_dns">
+                                            <input type="hidden" name="project_id" value="{{ p.id }}">
+                                            <button type="submit" class="btn btn-danger btn-sm">删除 DNS</button>
+                                        </form>
+                                        {% endif %}
+                                        <form method="post" style="display:inline;" onsubmit="return confirm('确认改写前缀？')">
+                                            <input type="hidden" name="action" value="rewrite_prefix">
+                                            <input type="hidden" name="project_id" value="{{ p.id }}">
+                                            <input type="text" name="new_prefix" placeholder="新前缀" value="{{ p.subdomain_prefix if p.subdomain_prefix else '' }}" style="width:120px; background:rgba(0,30,30,0.8); border:1px solid #00ffc8; color:#00ffc8; padding:4px 8px; border-radius:8px;">
+                                            <button type="submit" class="btn btn-warning btn-sm">改写</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center text-muted">暂无项目</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">返回首页</a>
+                {% endif %}
+
+                <!-- ====== 页脚 ====== -->
+                <footer class="mt-5 pt-3 text-center text-muted">
+                    <small>{{ footer_text }}</small>
+                </footer>
+            </main>
+        </div>
+        {% endif %} <!-- end page != admin_login -->
+    </div>
+
+    <!-- ===== JavaScript 特效（保持不变） ===== -->
+    <script>
+        (function() {
+            const canvas = document.getElementById('effect-canvas');
+            const ctx = canvas.getContext('2d');
+            let width = window.innerWidth, height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            const effectType = '{{ bg_effect }}';
+
+            const effects = {
+                matrix: function() {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}:<>?~汉字あいうえお';
+                    const fontSize = 16;
+                    const columns = Math.floor(width / fontSize);
+                    const drops = [];
+                    for (let i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * -100);
+                    function draw() {
+                        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.fillStyle = '#00ffc8';
+                        ctx.font = fontSize + 'px monospace';
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#00ffc8';
+                        for (let i = 0; i < drops.length; i++) {
+                            const char = chars[Math.floor(Math.random() * chars.length)];
+                            const x = i * fontSize;
+                            const y = drops[i] * fontSize;
+                            ctx.fillStyle = (y > 0 && Math.random() > 0.975) ? '#ffffff' : '#00ffc8';
+                            ctx.fillText(char, x, y);
+                            if (y > height && Math.random() > 0.99) drops[i] = 0;
+                            drops[i]++;
+                        }
+                        requestAnimationFrame(draw);
+                    }
+                    draw();
+                },
+                particles: function() {
+                    const particles = [];
+                    const count = 150;
+                    for (let i = 0; i < count; i++) {
+                        particles.push({
+                            x: Math.random() * width,
+                            y: Math.random() * height,
+                            vx: (Math.random() - 0.5) * 0.6,
+                            vy: (Math.random() - 0.5) * 0.6,
+                            r: Math.random() * 2 + 1
+                        });
+                    }
+                    function draw() {
+                        ctx.clearRect(0, 0, width, height);
+                        ctx.strokeStyle = 'rgba(0, 255, 200, 0.15)';
+                        ctx.lineWidth = 0.8;
+                        for (let i = 0; i < particles.length; i++) {
+                            for (let j = i + 1; j < particles.length; j++) {
+                                const dx = particles[i].x - particles[j].x;
+                                const dy = particles[i].y - particles[j].y;
+                                const dist = Math.sqrt(dx*dx + dy*dy);
+                                if (dist < 150) {
+                                    ctx.beginPath();
+                                    ctx.moveTo(particles[i].x, particles[i].y);
+                                    ctx.lineTo(particles[j].x, particles[j].y);
+                                    ctx.stroke();
+                                }
+                            }
+                        }
+                        for (let p of particles) {
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                            ctx.fillStyle = '#00ffc8';
+                            ctx.shadowBlur = 12;
+                            ctx.shadowColor = '#00ffc8';
+                            ctx.fill();
+                        }
+                        for (let p of particles) {
+                            p.x += p.vx;
+                            p.y += p.vy;
+                            if (p.x < 0 || p.x > width) p.vx *= -1;
+                            if (p.y < 0 || p.y > height) p.vy *= -1;
+                        }
+                        requestAnimationFrame(draw);
+                    }
+                    draw();
+                },
+                fire: function() {
+                    const particles = [];
+                    const count = 120;
+                    for (let i = 0; i < count; i++) {
+                        particles.push({
+                            x: width/2 + (Math.random()-0.5)*200,
+                            y: height + 20,
+                            vx: (Math.random()-0.5)*2,
+                            vy: -Math.random()*4 - 1,
+                            life: Math.random()*100 + 50,
+                            maxLife: 150,
+                            r: Math.random()*6 + 2,
+                            color: `hsl(${Math.floor(Math.random()*20 + 10)}, 100%, ${Math.floor(Math.random()*30 + 50)}%)`
+                        });
+                    }
+                    function draw() {
+                        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                        ctx.fillRect(0, 0, width, height);
+                        for (let i = particles.length-1; i >= 0; i--) {
+                            const p = particles[i];
+                            p.x += p.vx;
+                            p.y += p.vy;
+                            p.life--;
+                            p.r *= 0.99;
+                            if (p.life <= 0 || p.y < 0 || p.r < 0.5) {
+                                particles.splice(i, 1);
+                                continue;
+                            }
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+                            ctx.fillStyle = p.color;
+                            ctx.shadowBlur = 20;
+                            ctx.shadowColor = p.color;
+                            ctx.fill();
+                        }
+                        while (particles.length < count) {
+                            particles.push({
+                                x: width/2 + (Math.random()-0.5)*200,
+                                y: height + 10,
+                                vx: (Math.random()-0.5)*2,
+                                vy: -Math.random()*5 - 1,
+                                life: Math.random()*80 + 40,
+                                maxLife: 150,
+                                r: Math.random()*6 + 2,
+                                color: `hsl(${Math.floor(Math.random()*20 + 10)}, 100%, ${Math.floor(Math.random()*30 + 50)}%)`
+                            });
+                        }
+                        requestAnimationFrame(draw);
+                    }
+                    draw();
+                },
+                wave: function() {
+                    let time = 0;
+                    function draw() {
+                        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.strokeStyle = '#00ffc8';
+                        ctx.lineWidth = 2;
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = '#00ffc8';
+                        for (let i = 0; i < 5; i++) {
+                            ctx.beginPath();
+                            const offset = i * 40;
+                            for (let x = 0; x < width; x += 2) {
+                                const y = height/2 + Math.sin(x * 0.02 + time * 0.02 + offset) * 50 + Math.sin(x * 0.01 + time * 0.03) * 30;
+                                if (x === 0) ctx.moveTo(x, y);
+                                else ctx.lineTo(x, y);
+                            }
+                            ctx.stroke();
+                        }
+                        time++;
+                        requestAnimationFrame(draw);
+                    }
+                    draw();
+                },
+                neon: function() {
+                    let time = 0;
+                    const colors = ['#ff00ff', '#00ffff', '#ff6600', '#00ff88', '#ff0066'];
+                    function draw() {
+                        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+                        ctx.fillRect(0, 0, width, height);
+                        const cx = width/2 + Math.sin(time*0.01)*100;
+                        const cy = height/2 + Math.cos(time*0.015)*80;
+                        const radius = 150 + Math.sin(time*0.02)*50;
+                        for (let i = 0; i < 8; i++) {
+                            const angle = time*0.01 + i * Math.PI/4;
+                            const r = radius + Math.sin(time*0.03 + i)*20;
+                            const x = cx + Math.cos(angle)*r;
+                            const y = cy + Math.sin(angle)*r;
+                            const gradient = ctx.createRadialGradient(x, y, 0, x, y, 80);
+                            const color = colors[i % colors.length];
+                            gradient.addColorStop(0, color + '80');
+                            gradient.addColorStop(1, color + '00');
+                            ctx.fillStyle = gradient;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 80, 0, Math.PI*2);
+                            ctx.fill();
+                        }
+                        time++;
+                        requestAnimationFrame(draw);
+                    }
+                    draw();
+                },
+                digital: function() {
+                    const gridSize = 40;
+                    const cols = Math.ceil(width / gridSize);
+                    const rows = Math.ceil(height / gridSize);
+                    let time = 0;
+                    function draw() {
+                        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.font = '16px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        for (let i = 0; i < cols; i++) {
+                            for (let j = 0; j < rows; j++) {
+                                const x = i * gridSize + gridSize/2;
+                                const y = j * gridSize + gridSize/2;
+                                const val = Math.floor(Math.random() * 10);
+                                const brightness = Math.sin(x*0.05 + y*0.07 + time*0.02) * 0.5 + 0.5;
+                                ctx.fillStyle = `rgba(0, 255, 200, ${brightness * 0.6 + 0.2})`;
+                                ctx.fillText(val, x, y);
+                            }
+                        }
+                        time++;
+                        requestAnimationFrame(draw);
+                    }
+                    draw();
+                }
+            };
+
+            if (effects[effectType]) {
+                effects[effectType]();
+            } else {
+                effects.matrix();
+            }
+
+            window.addEventListener('resize', function() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                location.reload();
+            });
+        })();
+    </script>
+
+    <!-- AOS 滚动滑动 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const items = document.querySelectorAll('.aos-item');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+            items.forEach(item => observer.observe(item));
+        });
+    </script>
+
+    <!-- 鼠标点击爆炸粒子 -->
+    <script>
+        document.addEventListener('click', function(e) {
+            const colors = ['#00ffc8', '#ff4466', '#ffaa00', '#00aaff', '#ff66cc', '#66ff99'];
+            const count = 30;
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                const size = Math.random() * 6 + 4;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 150 + 50;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const x = e.clientX;
+                const y = e.clientY;
+                particle.style.cssText = `
+                    position: fixed;
+                    left: ${x}px;
+                    top: ${y}px;
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: ${color};
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 9999;
+                    box-shadow: 0 0 10px ${color};
+                    transition: all 1.2s cubic-bezier(0, 0.5, 0.5, 1);
+                    opacity: 1;
+                `;
+                document.body.appendChild(particle);
+                requestAnimationFrame(() => {
+                    const dx = Math.cos(angle) * speed;
+                    const dy = Math.sin(angle) * speed - 30;
+                    particle.style.transform = `translate(${dx}px, ${dy}px) scale(0)`;
+                    particle.style.opacity = '0';
+                });
+                setTimeout(() => particle.remove(), 1500);
+            }
+        });
+    </script>
+</body>
+</html>
